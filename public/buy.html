@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Buy Items</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .item-card {
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      color: white;
+      padding: 20px;
+      margin: 20px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+      max-width: 300px;
+    }
+
+    .item-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .item-card button {
+      margin-top: 10px;
+      background-color: #e67e00;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .item-card button:hover {
+      background-color: #ff8c00;
+    }
+
+    #itemsContainer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 20px;
+      justify-content: center;
+      padding: 0;
+    }
+
+    nav a {
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    #filterContainer {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px;
+    }
+
+    .category-btn {
+      background-color: #2a2a2a;
+      border: 1px solid #555;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .category-btn:hover {
+      background-color: #e67e00;
+      transform: scale(1.05);
+    }
+
+    .category-btn.active {
+      background-color: #e67e00;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1><span class="len">लेन</span><span class="den">देन</span></h1>
+
+  <nav>
+    <ul>
+      <li><a href="userinfo.html">Profile</a></li>
+      <li><a href="sell.html">Sell</a></li>
+    </ul>
+  </nav>
+
+  <div id="filterContainer">
+    <button class="category-btn active" data-category="all">All</button>
+    <button class="category-btn" data-category="toys">Toys</button>
+    <button class="category-btn" data-category="electronics">Electronics</button>
+    <button class="category-btn" data-category="vehicles">Vehicles</button>
+    <button class="category-btn" data-category="clothes">Clothes</button>
+  </div>
+
+  <div id="itemsContainer">Loading items...</div>
+
+  <script>
+    let allItems = [];
+
+    fetch('/api/items')
+      .then(res => res.json())
+      .then(data => {
+        allItems = data;
+        renderItems(data);
+      });
+
+    function renderItems(items) {
+      const container = document.getElementById('itemsContainer');
+      container.innerHTML = '';
+
+      if (items.length === 0) {
+        container.innerHTML = "<p>No items available right now.</p>";
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <img src="/images/${item.imagePath}" alt="${item.itemName}">
+          <h3>${item.itemName}</h3>
+          <p>${item.description || ''}</p>
+          <p>Category: ${item.category || 'Uncategorized'}</p>
+          <p>Price: ₹${item.price}</p>
+          <p>Seller: ${item.username}</p>
+          <button onclick="buyItem('${item._id}', '${item.username}')">Buy</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const selected = btn.getAttribute('data-category');
+        if (selected === 'all') {
+          renderItems(allItems);
+        } else {
+          renderItems(allItems.filter(item => item.category?.toLowerCase() === selected));
+        }
+      });
+    });
+
+    async function buyItem(itemId, sellerUsername) {
+      try {
+        const resUser = await fetch('/api/user');
+        const user = await resUser.json();
+
+        if (user.username === sellerUsername) {
+          alert("You cannot buy your own item!");
+          return;
+        }
+
+        const res = await fetch(`/buy/${itemId}`, { method: 'POST' });
+
+        if (res.ok) {
+          alert('Item bought successfully!');
+          location.reload();
+        } else {
+          const msg = await res.text();
+          alert(msg || 'Failed to buy item');
+        }
+      } catch (err) {
+        console.error('Buy failed:', err);
+        alert('Something went wrong');
+      }
+    }
+  </script>
+</body>
+</html>

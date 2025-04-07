@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <title>User Profile</title>
+  <style>
+    .profile-box {
+      background-color: #1e1e1e;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      margin: 30px auto;
+      box-shadow: 0 4px 8px rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: white;
+    }
+
+    .profile-img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+    }
+
+    .selling-list {
+      margin-top: 20px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .selling-item {
+      background-color: #2a2a2a;
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+    }
+
+    .selling-item button {
+      margin-top: 5px;
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .selling-item button:hover {
+      background-color: darkred;
+    }
+
+    .logout-btn {
+      margin-top: 20px;
+      background-color: #444;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background-color: #666;
+    }
+
+    nav ul {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1><span class="len">लेन</span><span class="den">देन</span></h1>
+
+  <nav>
+    <ul>
+      <li><a href="buy.html">Buy</a></li>
+      <li><a href="sell.html">Sell</a></li>
+      <li><a href="#" onclick="logout(event)">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="profile-box">
+    <img src="images/icon.png" alt="User Image" class="profile-img" />
+    <h3>User Name</h3>
+    <div class="stats">
+      <div class="stat-item">Items Bought: <span>0</span></div>
+      <div class="stat-item">Items Sold: <span>0</span></div>
+      <div class="stat-item">Currently Selling: <span>0</span></div>
+    </div>
+
+    <div class="selling-list" id="sellingList">
+      <h4>Your Selling Items:</h4>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    fetch("/api/user")
+      .then((res) => res.json())
+      .then((data) => {
+        document.querySelector("h3").textContent = "Username: " + data.username;
+        document.querySelectorAll(".stat-item span")[0].textContent = data.bought || "0";
+        document.querySelectorAll(".stat-item span")[1].textContent = data.sold || "0";
+        document.querySelectorAll(".stat-item span")[2].textContent = data.selling.length;
+
+        const sellingList = document.getElementById("sellingList");
+        data.selling.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "selling-item";
+          div.innerHTML = `
+            <p><strong>${item.itemName}</strong> - ₹${item.price}</p>
+            <button onclick="cancelSell('${item._id}', this)">Cancel</button>
+          `;
+          sellingList.appendChild(div);
+        });
+      })
+      .catch(() => {
+        document.querySelector("h3").textContent = "Username: Guest";
+      });
+
+    function cancelSell(itemId, button) {
+      fetch("/cancel-sell/" + itemId, { method: "DELETE" })
+        .then((res) => {
+          if (res.ok) {
+            button.parentElement.remove();
+          } else {
+            alert("Failed to cancel item");
+          }
+        });
+    }
+
+    function logout(event) {
+      if (event) event.preventDefault();
+      fetch("/logout", {
+        method: "POST",
+        credentials: "include"
+      })
+      .then((res) => {
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          alert("Logout failed");
+        }
+      })
+      .catch(() => alert("Network error"));
+    }
+  </script>
+</body>
+</html>

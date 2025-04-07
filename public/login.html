@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="/css/style.css">
+  <title>Login</title>
+</head>
+<body>
+
+  <h1 lang="hi">
+    <span class="len">लेन</span><span class="den">देन</span>
+  </h1>
+
+  <div class="login-container">
+    <form id="loginForm">
+      <h2>Login</h2>
+
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required />
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required />
+
+      <button type="submit">Login</button>
+
+      <p id="loginError" style="color: red; display: none;"></p>
+
+      <div class="login-footer">
+        <p>Don't have an account? <a href="/register.html">Register here</a></p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const errorBox = document.getElementById('loginError');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(loginForm);
+      const data = Object.fromEntries(formData.entries());
+
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        window.location.href = '/buy.html';
+      } else {
+        errorBox.textContent = result.message;
+        errorBox.style.display = 'block';
+      }
+    });
+  </script>
+
+</body>
+</html>
